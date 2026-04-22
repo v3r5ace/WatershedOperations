@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Internal Dashboard</p>
+        <h1>{{ app_name }}</h1>
+      </div>
+      <div class="topbar-actions">
+        <div class="user-pill">
+          <strong>{{ user.full_name }}</strong>
+          <span>{{ user.role.value }}</span>
+        </div>
+        <a href="/logout" class="ghost-button">Log Out</a>
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <section class="hero card">
+        <div class="hero-copy">
+          <p class="eyebrow">Operations Overview</p>
+          <h2>Keep ministry spaces ready for what’s next.</h2>
+          <p class="muted">
+            Track facility needs, coordinate volunteers and staff, and stay aligned with the public church calendar.
+          </p>
+        </div>
+        <img src="/static/watershed-logo.webp" alt="Watershed Church logo" class="hero-logo" />
+      </section>
+
+      <section class="stats-row">
+        <article class="card stat-card">
+          <span>Open Tasks</span>
+          <strong>{{ stats.open_tasks }}</strong>
+        </article>
+        <article class="card stat-card">
+          <span>Completed Tasks</span>
+          <strong>{{ stats.completed_tasks }}</strong>
+        </article>
+        <article class="card stat-card">
+          <span>Calendar Events</span>
+          <strong>{{ stats.events_loaded }}</strong>
+        </article>
+        <article class="card stat-card">
+          <span>Active Team</span>
+          <strong>{{ stats.team_members }}</strong>
+        </article>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Maintenance Punch List</p>
+            <h3>Current assignments</h3>
+          </div>
+        </div>
+        <div class="table-shell">
+          <table>
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Area</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Assignee</th>
+                <th>Due</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for task in tasks %}
+              <tr>
+                <td>
+                  <strong>{{ task.title }}</strong>
+                  <p class="table-subcopy">{{ task.description }}</p>
+                </td>
+                <td>{{ task.area }}</td>
+                <td><span class="badge status-{{ task.status.value }}">{{ task.status.value.replace("_", " ") }}</span></td>
+                <td><span class="badge priority-{{ task.priority.value }}">{{ task.priority.value }}</span></td>
+                <td>{{ task.assignee.full_name if task.assignee else "Unassigned" }}</td>
+                <td>{{ task.due_at.strftime("%b %d, %Y %I:%M %p") if task.due_at else "No deadline" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Upcoming Events</p>
+            <h3>Calendar intake</h3>
+          </div>
+          {% if calendar_url_configured %}
+          <form method="post" action="/dashboard/calendar-sync">
+            <button type="submit">Sync Calendar</button>
+          </form>
+          {% else %}
+          <span class="muted">Add `CALENDAR_ICS_URL` to enable sync.</span>
+          {% endif %}
+        </div>
+        <div class="event-list">
+          {% for event in events %}
+          <article class="event-card">
+            <p class="event-time">{{ event.start_at.strftime("%a, %b %d at %I:%M %p") }}</p>
+            <h4>{{ event.title }}</h4>
+            <p class="muted">{{ event.location or "Location not provided" }}</p>
+            {% if event.description %}
+            <p>{{ event.description }}</p>
+            {% endif %}
+          </article>
+          {% else %}
+          <p class="muted">No events are loaded yet. Once you provide the public calendar link, this area will populate automatically.</p>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Team Access</p>
+            <h3>User roster</h3>
+          </div>
+        </div>
+        <div class="team-grid">
+          {% for team_member in users %}
+          <article class="team-card">
+            <strong>{{ team_member.full_name }}</strong>
+            <span>{{ team_member.email }}</span>
+            <span class="badge">{{ team_member.role.value }}</span>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      {% if can_manage_tasks %}
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Manager Tools</p>
+            <h3>Create task</h3>
+          </div>
+        </div>
+        <form id="task-form" class="task-form">
+          <label>
+            Title
+            <input type="text" name="title" required minlength="3" />
+          </label>
+          <label>
+            Area
+            <input type="text" name="area" value="General" />
+          </label>
+          <label>
+            Priority
+            <select name="priority">
+              {% for priority in task_priorities %}
+              <option value="{{ priority }}">{{ priority }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Status
+            <select name="status">
+              {% for status_name in task_statuses %}
+              <option value="{{ status_name }}">{{ status_name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Due At
+            <input type="datetime-local" name="due_at" />
+          </label>
+          <label>
+            Assign To
+            <select name="assignee_id">
+              <option value="">Unassigned</option>
+              {% for team_member in users %}
+              <option value="{{ team_member.id }}">{{ team_member.full_name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="full-span">
+            Description
+            <textarea name="description" rows="4"></textarea>
+          </label>
+          <button type="submit">Create Task</button>
+          <p id="task-form-message" class="muted"></p>
+        </form>
+      </section>
+      {% endif %}
+    </main>
+
+    <script>
+      const taskForm = document.getElementById("task-form");
+      const message = document.getElementById("task-form-message");
+
+      if (taskForm) {
+        taskForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formData = new FormData(taskForm);
+          const payload = Object.fromEntries(formData.entries());
+
+          if (!payload.assignee_id) {
+            delete payload.assignee_id;
+          } else {
+            payload.assignee_id = Number(payload.assignee_id);
+          }
+
+          if (!payload.due_at) {
+            delete payload.due_at;
+          } else {
+            payload.due_at = new Date(payload.due_at).toISOString();
+          }
+
+          const response = await fetch("/api/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            message.textContent = "Task created. Refreshing dashboard...";
+            window.location.reload();
+            return;
+          }
+
+          const result = await response.json().catch(() => ({}));
+          message.textContent = result.detail || "Unable to create task.";
+        });
+      }
+    </script>
+  </body>
+</html>
