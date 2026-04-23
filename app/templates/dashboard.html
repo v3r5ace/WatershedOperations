@@ -100,39 +100,23 @@
             <p class="eyebrow">Venue Layout Board</p>
             <h3>Current room setups</h3>
           </div>
-          {% if can_manage_users %}
-          <div class="section-actions">
-            <a href="/admin" class="ghost-button">Configure Rooms</a>
-          </div>
-          {% endif %}
         </div>
         <div class="venue-grid">
           {% for room in rooms %}
-          <article class="venue-card">
+          <button
+            type="button"
+            class="venue-card{% if can_manage_tasks %} venue-card--interactive{% endif %}"
+            {% if can_manage_tasks %}data-room-id="{{ room.id }}"{% endif %}
+          >
             <div class="task-summary-head">
               <strong>{{ room.name }}</strong>
               <span class="badge">{{ room.current_layout_type.name if room.current_layout_type else "Not set" }}</span>
             </div>
             <p class="table-subcopy">{{ room.notes or "No room notes yet." }}</p>
             {% if can_manage_tasks %}
-            <form class="room-layout-form">
-              <input type="hidden" name="room_id" value="{{ room.id }}" />
-              <label>
-                Active Layout
-                <select name="current_layout_type_id">
-                  <option value="">Not set</option>
-                  {% for layout_type in layout_types %}
-                  <option value="{{ layout_type.id }}" {% if room.current_layout_type_id == layout_type.id %}selected{% endif %}>
-                    {{ layout_type.name }}
-                  </option>
-                  {% endfor %}
-                </select>
-              </label>
-              <button type="submit">Save Layout</button>
-              <p class="muted room-layout-message"></p>
-            </form>
+            <p class="kanban-hint">Click to edit room layout</p>
             {% endif %}
-          </article>
+          </button>
           {% else %}
           <p class="muted">No rooms are configured yet. Add rooms and layout types from the admin panel.</p>
           {% endfor %}
@@ -251,6 +235,36 @@
     </div>
 
     {% if can_manage_tasks %}
+    <div id="room-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="room-modal"></div>
+      <section class="modal-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Venue Layout Board</p>
+            <h3 id="room-modal-title">Edit room layout</h3>
+          </div>
+          <button type="button" class="ghost-button" data-close-modal="room-modal">Close</button>
+        </div>
+        <form id="room-modal-form" class="admin-form">
+          <input type="hidden" name="room_id" id="room-modal-id" />
+          <p id="room-modal-notes" class="muted"></p>
+          <label>
+            Active Layout
+            <select name="current_layout_type_id" id="room-modal-layout">
+              <option value="">Not set</option>
+              {% for layout_type in layout_types %}
+              <option value="{{ layout_type.id }}">{{ layout_type.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button type="submit" class="full-span">Save Layout</button>
+          <p id="room-modal-message" class="muted full-span"></p>
+        </form>
+      </section>
+    </div>
+    {% endif %}
+
+    {% if can_manage_tasks %}
     <div id="task-modal" class="modal hidden" aria-hidden="true">
       <div class="modal-backdrop" data-close-modal="task-modal"></div>
       <section class="modal-panel">
@@ -323,7 +337,13 @@
       const kanbanBoard = document.getElementById("kanban-board");
       const detailTitle = document.getElementById("calendar-detail-title");
       const detailList = document.getElementById("calendar-detail-list");
-      const roomForms = document.querySelectorAll(".room-layout-form");
+      const roomCards = document.querySelectorAll("[data-room-id]");
+      const roomModalForm = document.getElementById("room-modal-form");
+      const roomModalTitle = document.getElementById("room-modal-title");
+      const roomModalId = document.getElementById("room-modal-id");
+      const roomModalNotes = document.getElementById("room-modal-notes");
+      const roomModalLayout = document.getElementById("room-modal-layout");
+      const roomModalMessage = document.getElementById("room-modal-message");
       let dragTaskId = null;
 
       function toggleModal(id, show) {
@@ -493,6 +513,18 @@
         toggleModal("calendar-modal", true);
       }
 
+      function openRoomModal(roomId) {
+        const room = rooms.find((item) => item.id === Number(roomId));
+        if (!room || !roomModalForm) return;
+
+        roomModalTitle.textContent = room.name;
+        roomModalId.value = room.id;
+        roomModalNotes.textContent = room.notes || "No room notes yet.";
+        roomModalLayout.value = room.current_layout_type_id ?? "";
+        roomModalMessage.textContent = "";
+        toggleModal("room-modal", true);
+      }
+
       document.querySelectorAll(".calendar-day").forEach((dayButton) => {
         dayButton.addEventListener("click", () => {
           document.querySelectorAll(".calendar-day").forEach((button) => button.classList.remove("calendar-day--active"));
@@ -536,32 +568,33 @@
         });
       }
 
-      roomForms.forEach((form) => {
-        form.addEventListener("submit", async (event) => {
-          event.preventDefault();
-          const formData = new FormData(form);
-          const roomId = formData.get("room_id");
-          const rawLayoutId = formData.get("current_layout_type_id");
-          const payload = {
-            current_layout_type_id: rawLayoutId ? Number(rawLayoutId) : null,
-          };
+      roomCards.forEach((card) => {
+        card.addEventListener("click", () => openRoomModal(card.dataset.roomId));
+      });
 
-          const response = await fetch(`/api/rooms/${roomId}/layout`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
+      roomModalForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(roomModalForm);
+        const roomId = formData.get("room_id");
+        const rawLayoutId = formData.get("current_layout_type_id");
+        const payload = {
+          current_layout_type_id: rawLayoutId ? Number(rawLayoutId) : null,
+        };
 
-          const messageNode = form.querySelector(".room-layout-message");
-          if (response.ok) {
-            messageNode.textContent = "Layout updated. Refreshing...";
-            window.location.reload();
-            return;
-          }
-
-          const result = await response.json().catch(() => ({}));
-          messageNode.textContent = result.detail || "Unable to update room layout.";
+        const response = await fetch(`/api/rooms/${roomId}/layout`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
+
+        if (response.ok) {
+          roomModalMessage.textContent = "Layout updated. Refreshing...";
+          window.location.reload();
+          return;
+        }
+
+        const result = await response.json().catch(() => ({}));
+        roomModalMessage.textContent = result.detail || "Unable to update room layout.";
       });
 
       renderKanban();
