@@ -94,6 +94,51 @@
         </div>
       </section>
 
+      <section class="card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Venue Layout Board</p>
+            <h3>Current room setups</h3>
+          </div>
+          {% if can_manage_users %}
+          <div class="section-actions">
+            <a href="/admin" class="ghost-button">Configure Rooms</a>
+          </div>
+          {% endif %}
+        </div>
+        <div class="venue-grid">
+          {% for room in rooms %}
+          <article class="venue-card">
+            <div class="task-summary-head">
+              <strong>{{ room.name }}</strong>
+              <span class="badge">{{ room.current_layout_type.name if room.current_layout_type else "Not set" }}</span>
+            </div>
+            <p class="table-subcopy">{{ room.notes or "No room notes yet." }}</p>
+            {% if can_manage_tasks %}
+            <form class="room-layout-form">
+              <input type="hidden" name="room_id" value="{{ room.id }}" />
+              <label>
+                Active Layout
+                <select name="current_layout_type_id">
+                  <option value="">Not set</option>
+                  {% for layout_type in layout_types %}
+                  <option value="{{ layout_type.id }}" {% if room.current_layout_type_id == layout_type.id %}selected{% endif %}>
+                    {{ layout_type.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+              <button type="submit">Save Layout</button>
+              <p class="muted room-layout-message"></p>
+            </form>
+            {% endif %}
+          </article>
+          {% else %}
+          <p class="muted">No rooms are configured yet. Add rooms and layout types from the admin panel.</p>
+          {% endfor %}
+        </div>
+      </section>
+
       <section class="calendar-roster-grid">
         <section class="card">
           <div class="section-heading">
@@ -270,6 +315,7 @@
       const message = document.getElementById("task-form-message");
       const modalElements = document.querySelectorAll("[data-open-modal], [data-close-modal]");
       const tasks = JSON.parse({{ tasks_json|tojson }});
+      const rooms = JSON.parse({{ rooms_json|tojson }});
       const eventsByDay = JSON.parse({{ events_json|tojson }});
       const canManageTasks = {{ "true" if can_manage_tasks else "false" }};
       const currentUserId = {{ user.id }};
@@ -277,6 +323,7 @@
       const kanbanBoard = document.getElementById("kanban-board");
       const detailTitle = document.getElementById("calendar-detail-title");
       const detailList = document.getElementById("calendar-detail-list");
+      const roomForms = document.querySelectorAll(".room-layout-form");
       let dragTaskId = null;
 
       function toggleModal(id, show) {
@@ -313,6 +360,16 @@
         }
       }
 
+      async function deleteTask(taskId) {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+          method: "DELETE",
+        });
+
+        if (response.ok) {
+          window.location.reload();
+        }
+      }
+
       function renderKanban() {
         if (!kanbanBoard) return;
 
@@ -342,7 +399,10 @@
                     <span>${task.assignee_name}</span>
                     <span>${task.due_at}</span>
                   </div>
-                  <div class="kanban-hint">${canEditTask(task) ? "Drag to update status" : "View only"}</div>
+                  <div class="kanban-card-footer">
+                    <div class="kanban-hint">${canEditTask(task) ? "Drag to update status" : "View only"}</div>
+                    ${canManageTasks ? `<button type="button" class="danger-button small-button" data-delete-task="${task.id}">Delete</button>` : ""}
+                  </div>
                 </article>
               `)
               .join("");
@@ -394,6 +454,14 @@
             if (!task || task.status === targetStatus || !canEditTask(task)) return;
 
             await updateTaskStatus(task.id, targetStatus);
+          });
+        });
+
+        kanbanBoard.querySelectorAll("[data-delete-task]").forEach((button) => {
+          button.addEventListener("click", async () => {
+            if (window.confirm("Delete this punchlist item?")) {
+              await deleteTask(button.dataset.deleteTask);
+            }
           });
         });
       }
@@ -467,6 +535,34 @@
           message.textContent = result.detail || "Unable to create task.";
         });
       }
+
+      roomForms.forEach((form) => {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formData = new FormData(form);
+          const roomId = formData.get("room_id");
+          const rawLayoutId = formData.get("current_layout_type_id");
+          const payload = {
+            current_layout_type_id: rawLayoutId ? Number(rawLayoutId) : null,
+          };
+
+          const response = await fetch(`/api/rooms/${roomId}/layout`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          const messageNode = form.querySelector(".room-layout-message");
+          if (response.ok) {
+            messageNode.textContent = "Layout updated. Refreshing...";
+            window.location.reload();
+            return;
+          }
+
+          const result = await response.json().catch(() => ({}));
+          messageNode.textContent = result.detail || "Unable to update room layout.";
+        });
+      });
 
       renderKanban();
     </script>

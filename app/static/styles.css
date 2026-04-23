@@ -51,6 +51,15 @@ button,
   transition: transform 180ms ease, background 180ms ease;
 }
 
+.danger-button {
+  background: var(--danger);
+  color: #fff;
+}
+
+.danger-button:hover {
+  background: #8c3e31;
+}
+
 button:hover,
 .ghost-button:hover {
   transform: translateY(-1px);
@@ -317,6 +326,11 @@ td {
   align-items: start;
 }
 
+.admin-stack {
+  display: grid;
+  gap: 1.25rem;
+}
+
 .card-panel {
   margin-top: 1rem;
   border-radius: 20px;
@@ -358,6 +372,12 @@ td {
   gap: 1rem;
 }
 
+.admin-entity-grid,
+.venue-grid {
+  display: grid;
+  gap: 1rem;
+}
+
 .full-span {
   grid-column: 1 / -1;
 }
@@ -366,6 +386,17 @@ td {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.venue-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.venue-card {
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.92);
 }
 
 .task-summary-card {
@@ -396,6 +427,12 @@ td {
   background: rgba(31, 36, 31, 0.06);
   color: var(--muted);
   font-size: 0.82rem;
+}
+
+.room-layout-form {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
 }
 
 .calendar-shell {
@@ -560,9 +597,21 @@ td {
   transform: rotate(1.5deg);
 }
 
-.kanban-hint {
+.kanban-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
   margin-top: 0.9rem;
+}
+
+.kanban-hint {
   color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.small-button {
+  padding: 0.55rem 0.85rem;
   font-size: 0.82rem;
 }
 
@@ -579,6 +628,7 @@ td {
   .stats-row,
   .task-form,
   .task-summary-grid,
+  .venue-grid,
   .calendar-roster-grid,
   .admin-grid,
   .kanban-board {

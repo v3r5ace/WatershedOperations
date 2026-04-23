@@ -81,3 +81,28 @@ class CalendarEvent(Base):
     end_at: Mapped[datetime] = mapped_column(DateTime, index=True)
     source_url: Mapped[str] = mapped_column(String(500), default="")
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class LayoutType(Base):
+    __tablename__ = "layout_types"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    description: Mapped[str] = mapped_column(Text, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    rooms: Mapped[list["VenueRoom"]] = relationship(back_populates="current_layout_type")
+
+
+class VenueRoom(Base):
+    __tablename__ = "venue_rooms"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    current_layout_type_id: Mapped[Optional[int]] = mapped_column(ForeignKey("layout_types.id"), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    current_layout_type: Mapped[Optional[LayoutType]] = relationship(back_populates="rooms")

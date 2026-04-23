@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from app.auth import get_current_user, hash_password, require_roles
 from app.config import get_settings
 from app.database import get_db
-from app.models import CalendarEvent, MaintenanceTask, TaskStatus, User, UserRole
-from app.schemas import TaskCreate, TaskUpdate, UserCreate
+from app.models import CalendarEvent, LayoutType, MaintenanceTask, TaskStatus, User, UserRole, VenueRoom
+from app.schemas import LayoutTypeCreate, TaskCreate, TaskUpdate, UserCreate, VenueRoomCreate, VenueRoomLayoutUpdate
 from app.services.calendar import sync_calendar_from_url
 
 
@@ -92,6 +92,20 @@ def update_task(
     return {"success": True}
 
 
+@router.delete("/tasks/{task_id}")
+def delete_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
+):
+    task = db.query(MaintenanceTask).filter(MaintenanceTask.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    db.delete(task)
+    db.commit()
+    return {"success": True}
+
+
 @router.get("/events")
 def list_events(
     db: Session = Depends(get_db),
@@ -144,3 +158,91 @@ def create_user(
     db.commit()
     db.refresh(user)
     return {"id": user.id}
+
+
+@router.post("/layout-types", status_code=status.HTTP_201_CREATED)
+def create_layout_type(
+    payload: LayoutTypeCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(UserRole.admin)),
+):
+    existing = db.query(LayoutType).filter(LayoutType.name == payload.name.strip()).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="A layout type with that name already exists")
+
+    layout_type = LayoutType(name=payload.name.strip(), description=payload.description.strip(), is_active=True)
+    db.add(layout_type)
+    db.commit()
+    db.refresh(layout_type)
+    return {"id": layout_type.id}
+
+
+@router.delete("/layout-types/{layout_type_id}")
+def delete_layout_type(
+    layout_type_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(UserRole.admin)),
+):
+    layout_type = db.query(LayoutType).filter(LayoutType.id == layout_type_id).first()
+    if not layout_type:
+        raise HTTPException(status_code=404, detail="Layout type not found")
+
+    rooms = db.query(VenueRoom).filter(VenueRoom.current_layout_type_id == layout_type.id).all()
+    for room in rooms:
+        room.current_layout_type_id = None
+
+    db.delete(layout_type)
+    db.commit()
+    return {"success": True}
+
+
+@router.post("/rooms", status_code=status.HTTP_201_CREATED)
+def create_room(
+    payload: VenueRoomCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(UserRole.admin)),
+):
+    existing = db.query(VenueRoom).filter(VenueRoom.name == payload.name.strip()).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="A room with that name already exists")
+
+    room = VenueRoom(name=payload.name.strip(), notes=payload.notes.strip(), is_active=True)
+    db.add(room)
+    db.commit()
+    db.refresh(room)
+    return {"id": room.id}
+
+
+@router.delete("/rooms/{room_id}")
+def delete_room(
+    room_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(UserRole.admin)),
+):
+    room = db.query(VenueRoom).filter(VenueRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    db.delete(room)
+    db.commit()
+    return {"success": True}
+
+
+@router.patch("/rooms/{room_id}/layout")
+def update_room_layout(
+    room_id: int,
+    payload: VenueRoomLayoutUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles(UserRole.admin, UserRole.manager)),
+):
+    room = db.query(VenueRoom).filter(VenueRoom.id == room_id).first()
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    if payload.current_layout_type_id is not None:
+        layout_type = db.query(LayoutType).filter(LayoutType.id == payload.current_layout_type_id).first()
+        if not layout_type:
+            raise HTTPException(status_code=404, detail="Layout type not found")
+
+    room.current_layout_type_id = payload.current_layout_type_id
+    db.commit()
+    return {"success": True}

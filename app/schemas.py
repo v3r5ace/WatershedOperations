@@ -36,3 +36,17 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8)
     role: UserRole
+
+
+class LayoutTypeCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    description: str = ""
+
+
+class VenueRoomCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=120)
+    notes: str = ""
+
+
+class VenueRoomLayoutUpdate(BaseModel):
+    current_layout_type_id: Optional[int] = None

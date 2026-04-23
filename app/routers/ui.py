@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.auth import authenticate_user, can_manage_tasks
 from app.config import get_settings
 from app.database import get_db
-from app.models import CalendarEvent, MaintenanceTask, TaskPriority, TaskStatus, User, UserRole
+from app.models import CalendarEvent, LayoutType, MaintenanceTask, TaskPriority, TaskStatus, User, UserRole, VenueRoom
 from app.services.calendar import sync_calendar_from_url
 
 
@@ -123,6 +123,8 @@ def dashboard(
     events = db.query(CalendarEvent).order_by(CalendarEvent.start_at.asc()).all()
     now = datetime.utcnow()
     users = db.query(User).order_by(User.full_name.asc()).all()
+    layout_types = db.query(LayoutType).order_by(LayoutType.name.asc()).all()
+    rooms = db.query(VenueRoom).order_by(VenueRoom.name.asc()).all()
     calendar_days, events_json = build_calendar_context(events, now)
 
     task_payload = [
@@ -139,6 +141,16 @@ def dashboard(
             "assignee_name": task.assignee.full_name if task.assignee else "Unassigned",
         }
         for task in tasks
+    ]
+    room_payload = [
+        {
+            "id": room.id,
+            "name": room.name,
+            "notes": room.notes,
+            "current_layout_type_id": room.current_layout_type_id,
+            "current_layout_type_name": room.current_layout_type.name if room.current_layout_type else "Not set",
+        }
+        for room in rooms
     ]
 
     stats = {
@@ -167,6 +179,9 @@ def dashboard(
             "calendar_days": calendar_days,
             "events_json": events_json,
             "tasks_json": json.dumps(task_payload),
+            "rooms": rooms,
+            "layout_types": layout_types,
+            "rooms_json": json.dumps(room_payload),
             "calendar_url_configured": bool(get_settings().calendar_ics_url),
         },
     )
@@ -184,6 +199,8 @@ def admin_panel(
         return RedirectResponse(url="/dashboard", status_code=302)
 
     users = db.query(User).order_by(User.full_name.asc()).all()
+    layout_types = db.query(LayoutType).order_by(LayoutType.name.asc()).all()
+    rooms = db.query(VenueRoom).order_by(VenueRoom.name.asc()).all()
     return templates.TemplateResponse(
         request,
         "admin.html",
@@ -192,6 +209,8 @@ def admin_panel(
             "user": user,
             "users": users,
             "user_roles": [role.value for role in UserRole],
+            "layout_types": layout_types,
+            "rooms": rooms,
         },
     )
 

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import hash_password
 from app.config import get_settings
-from app.models import MaintenanceTask, TaskPriority, TaskStatus, User, UserRole
+from app.models import LayoutType, MaintenanceTask, TaskPriority, TaskStatus, User, UserRole, VenueRoom
 
 
 def seed_defaults(db: Session) -> None:
@@ -47,4 +47,34 @@ def seed_defaults(db: Session) -> None:
                 ),
             ]
         )
+
+    default_layouts = [
+        ("Classroom Seating", "Rows facing the front for teaching sessions and seminars."),
+        ("Round Tables", "Small-group table setup for receptions, meals, and discussions."),
+        ("Reception Open Floor", "Open circulation layout for mingling and standing-room gatherings."),
+        ("Funeral Seating", "Reserved seating with center aisle and hospitality support."),
+    ]
+    for name, description in default_layouts:
+        if not db.query(LayoutType).filter(LayoutType.name == name).first():
+            db.add(LayoutType(name=name, description=description, is_active=True))
+
+    db.flush()
+
+    default_rooms = [
+        ("Children's Lobby", "Overflow gathering and family check-in area."),
+        ("Main Lobby", "Welcome and reception area for guests and renters."),
+        ("Sanctuary", "Primary worship and ceremony space."),
+    ]
+    first_layout = db.query(LayoutType).filter(LayoutType.name == "Classroom Seating").first()
+    for name, notes in default_rooms:
+        room = db.query(VenueRoom).filter(VenueRoom.name == name).first()
+        if not room:
+            db.add(
+                VenueRoom(
+                    name=name,
+                    notes=notes,
+                    is_active=True,
+                    current_layout_type_id=first_layout.id if first_layout else None,
+                )
+            )
     db.commit()

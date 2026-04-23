@@ -24,85 +24,194 @@
 
     <main class="dashboard-grid">
       <section class="admin-grid">
-        <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Access Control</p>
-              <h3>Add team member</h3>
+        <section class="admin-stack">
+          <section class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Access Control</p>
+                <h3>Add team member</h3>
+              </div>
             </div>
-          </div>
-          <form id="user-form" class="admin-form">
-            <label>
-              Full Name
-              <input type="text" name="full_name" required minlength="2" />
-            </label>
-            <label>
-              Email
-              <input type="email" name="email" required />
-            </label>
-            <label>
-              Role
-              <select name="role">
-                {% for role in user_roles %}
-                <option value="{{ role }}">{{ role }}</option>
-                {% endfor %}
-              </select>
-            </label>
-            <label>
-              Temporary Password
-              <input type="password" name="password" required minlength="8" />
-            </label>
-            <button type="submit" class="full-span">Add Team Member</button>
-            <p id="user-form-message" class="muted full-span"></p>
-          </form>
+            <form id="user-form" class="admin-form">
+              <label>
+                Full Name
+                <input type="text" name="full_name" required minlength="2" />
+              </label>
+              <label>
+                Email
+                <input type="email" name="email" required />
+              </label>
+              <label>
+                Role
+                <select name="role">
+                  {% for role in user_roles %}
+                  <option value="{{ role }}">{{ role }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                Temporary Password
+                <input type="password" name="password" required minlength="8" />
+              </label>
+              <button type="submit" class="full-span">Add Team Member</button>
+              <p id="user-form-message" class="muted full-span"></p>
+            </form>
+          </section>
+
+          <section class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Venue Rooms</p>
+                <h3>Add room</h3>
+              </div>
+            </div>
+            <form id="room-form" class="admin-form">
+              <label>
+                Room Name
+                <input type="text" name="name" required minlength="2" />
+              </label>
+              <label>
+                Notes
+                <textarea name="notes" rows="3"></textarea>
+              </label>
+              <button type="submit" class="full-span">Add Room</button>
+              <p id="room-form-message" class="muted full-span"></p>
+            </form>
+          </section>
+
+          <section class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Layout Types</p>
+                <h3>Add layout option</h3>
+              </div>
+            </div>
+            <form id="layout-form" class="admin-form">
+              <label>
+                Layout Name
+                <input type="text" name="name" required minlength="2" />
+              </label>
+              <label>
+                Description
+                <textarea name="description" rows="3"></textarea>
+              </label>
+              <button type="submit" class="full-span">Add Layout Type</button>
+              <p id="layout-form-message" class="muted full-span"></p>
+            </form>
+          </section>
         </section>
 
-        <section class="card">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Current Users</p>
-              <h3>Roster</h3>
+        <section class="admin-stack">
+          <section class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Current Users</p>
+                <h3>Roster</h3>
+              </div>
             </div>
-          </div>
-          <div class="team-grid">
-            {% for team_member in users %}
-            <article class="team-card">
-              <strong>{{ team_member.full_name }}</strong>
-              <span>{{ team_member.email }}</span>
-              <span class="badge">{{ team_member.role.value }}</span>
-            </article>
-            {% endfor %}
-          </div>
+            <div class="team-grid">
+              {% for team_member in users %}
+              <article class="team-card">
+                <strong>{{ team_member.full_name }}</strong>
+                <span>{{ team_member.email }}</span>
+                <span class="badge">{{ team_member.role.value }}</span>
+              </article>
+              {% endfor %}
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Configured Rooms</p>
+                <h3>Venue spaces</h3>
+              </div>
+            </div>
+            <div class="admin-entity-grid">
+              {% for room in rooms %}
+              <article class="team-card">
+                <strong>{{ room.name }}</strong>
+                <span>{{ room.notes or "No notes yet." }}</span>
+                <span class="badge">{{ room.current_layout_type.name if room.current_layout_type else "No active layout" }}</span>
+                <button type="button" class="danger-button small-button admin-delete" data-entity="room" data-id="{{ room.id }}">Delete Room</button>
+              </article>
+              {% endfor %}
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Available Layouts</p>
+                <h3>Layout library</h3>
+              </div>
+            </div>
+            <div class="admin-entity-grid">
+              {% for layout_type in layout_types %}
+              <article class="team-card">
+                <strong>{{ layout_type.name }}</strong>
+                <span>{{ layout_type.description or "No description yet." }}</span>
+                <button type="button" class="danger-button small-button admin-delete" data-entity="layout" data-id="{{ layout_type.id }}">Delete Layout</button>
+              </article>
+              {% endfor %}
+            </div>
+          </section>
         </section>
       </section>
     </main>
 
     <script>
-      const userForm = document.getElementById("user-form");
-      const userMessage = document.getElementById("user-form-message");
-
-      if (userForm) {
-        userForm.addEventListener("submit", async (event) => {
-          event.preventDefault();
-          const formData = new FormData(userForm);
-          const payload = Object.fromEntries(formData.entries());
-
-          const response = await fetch("/api/users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-
-          if (response.ok) {
-            userMessage.textContent = "Team member added. Refreshing panel...";
-            window.location.reload();
-            return;
-          }
-
-          const result = await response.json().catch(() => ({}));
-          userMessage.textContent = result.detail || "Unable to add team member.";
+      async function submitJsonForm(form, endpoint, messageNode, successText) {
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
+
+        if (response.ok) {
+          messageNode.textContent = successText;
+          window.location.reload();
+          return;
+        }
+
+        const result = await response.json().catch(() => ({}));
+        messageNode.textContent = result.detail || "Unable to save changes.";
       }
+
+      const userForm = document.getElementById("user-form");
+      const roomForm = document.getElementById("room-form");
+      const layoutForm = document.getElementById("layout-form");
+
+      userForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await submitJsonForm(userForm, "/api/users", document.getElementById("user-form-message"), "Team member added. Refreshing panel...");
+      });
+
+      roomForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await submitJsonForm(roomForm, "/api/rooms", document.getElementById("room-form-message"), "Room added. Refreshing panel...");
+      });
+
+      layoutForm?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await submitJsonForm(layoutForm, "/api/layout-types", document.getElementById("layout-form-message"), "Layout type added. Refreshing panel...");
+      });
+
+      document.querySelectorAll(".admin-delete").forEach((button) => {
+        button.addEventListener("click", async () => {
+          const isRoom = button.dataset.entity === "room";
+          const target = isRoom ? `/api/rooms/${button.dataset.id}` : `/api/layout-types/${button.dataset.id}`;
+          const label = isRoom ? "room" : "layout type";
+          if (!window.confirm(`Delete this ${label}?`)) return;
+
+          const response = await fetch(target, { method: "DELETE" });
+          if (response.ok) {
+            window.location.reload();
+          }
+        });
+      });
     </script>
   </body>
 </html>
