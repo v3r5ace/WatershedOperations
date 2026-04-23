@@ -87,8 +87,9 @@ button:hover,
 
 .brand-block {
   display: flex;
-  gap: 1.5rem;
-  align-items: center;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
 }
 
 .brand-logo,
@@ -101,6 +102,10 @@ button:hover,
 .brand-logo {
   width: 240px;
   max-width: 42vw;
+}
+
+.brand-copy {
+  max-width: 34rem;
 }
 
 .hero-logo {
@@ -302,6 +307,12 @@ td {
 .calendar-roster-grid {
   display: grid;
   grid-template-columns: minmax(300px, 1fr) minmax(420px, 1fr);
+  gap: 1.25rem;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
   gap: 1.25rem;
 }
 
@@ -562,6 +573,7 @@ td {
   .task-form,
   .task-summary-grid,
   .calendar-roster-grid,
+  .admin-grid,
   .kanban-board {
     grid-template-columns: 1fr;
   }

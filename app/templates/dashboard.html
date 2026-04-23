@@ -17,6 +17,9 @@
           <strong>{{ user.full_name }}</strong>
           <span>{{ user.role.value }}</span>
         </div>
+        {% if can_manage_users %}
+        <a href="/admin" class="ghost-button">Admin Panel</a>
+        {% endif %}
         <a href="/logout" class="ghost-button">Log Out</a>
       </div>
     </header>
@@ -98,6 +101,11 @@
               <p class="eyebrow">Team Access</p>
               <h3>User roster</h3>
             </div>
+            {% if can_manage_users %}
+            <div class="section-actions">
+              <a href="/admin" class="ghost-button">Manage Users</a>
+            </div>
+            {% endif %}
           </div>
           <div class="team-grid">
             {% for team_member in users %}
@@ -160,41 +168,6 @@
           </div>
         </section>
       </section>
-
-      {% if can_manage_users %}
-      <section class="card">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Admin Tools</p>
-            <h3>Add team member</h3>
-          </div>
-        </div>
-        <form id="user-form" class="task-form">
-          <label>
-            Full Name
-            <input type="text" name="full_name" required minlength="2" />
-          </label>
-          <label>
-            Email
-            <input type="email" name="email" required />
-          </label>
-          <label>
-            Role
-            <select name="role">
-              {% for role in user_roles %}
-              <option value="{{ role }}">{{ role }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label>
-            Temporary Password
-            <input type="password" name="password" required minlength="8" />
-          </label>
-          <button type="submit">Add Team Member</button>
-          <p id="user-form-message" class="muted"></p>
-        </form>
-      </section>
-      {% endif %}
     </main>
 
     <div id="kanban-modal" class="modal hidden" aria-hidden="true">
@@ -295,8 +268,6 @@
     <script>
       const taskForm = document.getElementById("task-form");
       const message = document.getElementById("task-form-message");
-      const userForm = document.getElementById("user-form");
-      const userMessage = document.getElementById("user-form-message");
       const modalElements = document.querySelectorAll("[data-open-modal], [data-close-modal]");
       const tasks = JSON.parse({{ tasks_json|tojson }});
       const eventsByDay = JSON.parse({{ events_json|tojson }});
@@ -494,29 +465,6 @@
 
           const result = await response.json().catch(() => ({}));
           message.textContent = result.detail || "Unable to create task.";
-        });
-      }
-
-      if (userForm) {
-        userForm.addEventListener("submit", async (event) => {
-          event.preventDefault();
-          const formData = new FormData(userForm);
-          const payload = Object.fromEntries(formData.entries());
-
-          const response = await fetch("/api/users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-
-          if (response.ok) {
-            userMessage.textContent = "Team member added. Refreshing dashboard...";
-            window.location.reload();
-            return;
-          }
-
-          const result = await response.json().catch(() => ({}));
-          userMessage.textContent = result.detail || "Unable to add team member.";
         });
       }
 

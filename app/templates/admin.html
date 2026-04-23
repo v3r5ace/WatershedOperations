@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ app_name }} Admin</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Admin Panel</p>
+        <h1>{{ app_name }}</h1>
+      </div>
+      <div class="topbar-actions">
+        <div class="user-pill">
+          <strong>{{ user.full_name }}</strong>
+          <span>{{ user.role.value }}</span>
+        </div>
+        <a href="/dashboard" class="ghost-button">Back To Dashboard</a>
+        <a href="/logout" class="ghost-button">Log Out</a>
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <section class="admin-grid">
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Access Control</p>
+              <h3>Add team member</h3>
+            </div>
+          </div>
+          <form id="user-form" class="task-form">
+            <label>
+              Full Name
+              <input type="text" name="full_name" required minlength="2" />
+            </label>
+            <label>
+              Email
+              <input type="email" name="email" required />
+            </label>
+            <label>
+              Role
+              <select name="role">
+                {% for role in user_roles %}
+                <option value="{{ role }}">{{ role }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              Temporary Password
+              <input type="password" name="password" required minlength="8" />
+            </label>
+            <button type="submit">Add Team Member</button>
+            <p id="user-form-message" class="muted"></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Current Users</p>
+              <h3>Roster</h3>
+            </div>
+          </div>
+          <div class="team-grid">
+            {% for team_member in users %}
+            <article class="team-card">
+              <strong>{{ team_member.full_name }}</strong>
+              <span>{{ team_member.email }}</span>
+              <span class="badge">{{ team_member.role.value }}</span>
+            </article>
+            {% endfor %}
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const userForm = document.getElementById("user-form");
+      const userMessage = document.getElementById("user-form-message");
+
+      if (userForm) {
+        userForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formData = new FormData(userForm);
+          const payload = Object.fromEntries(formData.entries());
+
+          const response = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            userMessage.textContent = "Team member added. Refreshing panel...";
+            window.location.reload();
+            return;
+          }
+
+          const result = await response.json().catch(() => ({}));
+          userMessage.textContent = result.detail || "Unable to add team member.";
+        });
+      }
+    </script>
+  </body>
+</html>

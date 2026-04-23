@@ -28,6 +28,41 @@ def get_dashboard_user(request: Request, db: Session) -> Optional[User]:
     return db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
 
 
+def build_calendar_context(events: list[CalendarEvent], now: datetime) -> tuple[list[list[dict]], str]:
+    month_weeks = calendar.Calendar(firstweekday=6).monthdatescalendar(now.year, now.month)
+    events_by_day = {}
+    for event in events:
+        day_key = event.start_at.date().isoformat()
+        events_by_day.setdefault(day_key, []).append(
+            {
+                "id": event.id,
+                "title": event.title,
+                "location": event.location,
+                "description": event.description,
+                "start_at": event.start_at.strftime("%a, %b %d at %I:%M %p"),
+                "end_at": event.end_at.strftime("%I:%M %p"),
+            }
+        )
+
+    calendar_days = []
+    for week in month_weeks:
+        week_days = []
+        for day in week:
+            day_key = day.isoformat()
+            week_days.append(
+                {
+                    "date": day,
+                    "day_number": day.day,
+                    "iso": day_key,
+                    "in_month": day.month == now.month,
+                    "event_count": len(events_by_day.get(day_key, [])),
+                }
+            )
+        calendar_days.append(week_days)
+
+    return calendar_days, json.dumps(events_by_day)
+
+
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request):
     if request.session.get("user_id"):
@@ -86,39 +121,9 @@ def dashboard(
     )
     recent_tasks = tasks[:6]
     events = db.query(CalendarEvent).order_by(CalendarEvent.start_at.asc()).all()
-    users = db.query(User).order_by(User.full_name.asc()).all()
     now = datetime.utcnow()
-    month_weeks = calendar.Calendar(firstweekday=6).monthdatescalendar(now.year, now.month)
-
-    events_by_day = {}
-    for event in events:
-        day_key = event.start_at.date().isoformat()
-        events_by_day.setdefault(day_key, []).append(
-            {
-                "id": event.id,
-                "title": event.title,
-                "location": event.location,
-                "description": event.description,
-                "start_at": event.start_at.strftime("%a, %b %d at %I:%M %p"),
-                "end_at": event.end_at.strftime("%I:%M %p"),
-            }
-        )
-
-    calendar_days = []
-    for week in month_weeks:
-        week_days = []
-        for day in week:
-            day_key = day.isoformat()
-            week_days.append(
-                {
-                    "date": day,
-                    "day_number": day.day,
-                    "iso": day_key,
-                    "in_month": day.month == now.month,
-                    "event_count": len(events_by_day.get(day_key, [])),
-                }
-            )
-        calendar_days.append(week_days)
+    users = db.query(User).order_by(User.full_name.asc()).all()
+    calendar_days, events_json = build_calendar_context(events, now)
 
     task_payload = [
         {
@@ -157,13 +162,36 @@ def dashboard(
             "can_manage_users": user.role.value == "admin",
             "task_statuses": [status.value for status in TaskStatus],
             "task_priorities": [priority.value for priority in TaskPriority],
-            "user_roles": [role.value for role in UserRole],
             "now": now,
             "month_label": now.strftime("%B %Y"),
             "calendar_days": calendar_days,
-            "events_json": json.dumps(events_by_day),
+            "events_json": events_json,
             "tasks_json": json.dumps(task_payload),
             "calendar_url_configured": bool(get_settings().calendar_ics_url),
+        },
+    )
+
+
+@router.get("/admin", response_class=HTMLResponse)
+def admin_panel(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    user = get_dashboard_user(request, db)
+    if not user:
+        return RedirectResponse(url="/", status_code=302)
+    if user.role != UserRole.admin:
+        return RedirectResponse(url="/dashboard", status_code=302)
+
+    users = db.query(User).order_by(User.full_name.asc()).all()
+    return templates.TemplateResponse(
+        request,
+        "admin.html",
+        {
+            "app_name": get_settings().app_name,
+            "user": user,
+            "users": users,
+            "user_roles": [role.value for role in UserRole],
         },
     )
 
