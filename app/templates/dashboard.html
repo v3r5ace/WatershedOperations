@@ -29,6 +29,12 @@
           <p class="muted">
             Track facility needs, coordinate volunteers and staff, and stay aligned with the public church calendar.
           </p>
+          <div class="hero-actions">
+            <button type="button" data-open-modal="kanban-modal">Open Punchlist Board</button>
+            {% if can_manage_tasks %}
+            <button type="button" class="ghost-button" data-open-modal="task-modal">Add Task</button>
+            {% endif %}
+          </div>
         </div>
         <img src="/static/watershed-logo.webp" alt="Watershed Church logo" class="hero-logo" />
       </section>
@@ -58,35 +64,30 @@
             <p class="eyebrow">Maintenance Punch List</p>
             <h3>Current assignments</h3>
           </div>
+          <div class="section-actions">
+            <button type="button" class="ghost-button" data-open-modal="kanban-modal">View Board</button>
+            {% if can_manage_tasks %}
+            <button type="button" data-open-modal="task-modal">Add Task</button>
+            {% endif %}
+          </div>
         </div>
-        <div class="table-shell">
-          <table>
-            <thead>
-              <tr>
-                <th>Task</th>
-                <th>Area</th>
-                <th>Status</th>
-                <th>Priority</th>
-                <th>Assignee</th>
-                <th>Due</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for task in tasks %}
-              <tr>
-                <td>
-                  <strong>{{ task.title }}</strong>
-                  <p class="table-subcopy">{{ task.description }}</p>
-                </td>
-                <td>{{ task.area }}</td>
-                <td><span class="badge status-{{ task.status.value }}">{{ task.status.value.replace("_", " ") }}</span></td>
-                <td><span class="badge priority-{{ task.priority.value }}">{{ task.priority.value }}</span></td>
-                <td>{{ task.assignee.full_name if task.assignee else "Unassigned" }}</td>
-                <td>{{ task.due_at.strftime("%b %d, %Y %I:%M %p") if task.due_at else "No deadline" }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <div class="task-summary-grid">
+          {% for task in tasks %}
+          <article class="task-summary-card">
+            <div class="task-summary-head">
+              <strong>{{ task.title }}</strong>
+              <span class="badge status-{{ task.status.value }}">{{ task.status.value.replace("_", " ") }}</span>
+            </div>
+            <p class="table-subcopy">{{ task.description or "No description provided." }}</p>
+            <div class="task-meta">
+              <span>{{ task.area }}</span>
+              <span>{{ task.assignee.full_name if task.assignee else "Unassigned" }}</span>
+              <span>{{ task.due_at.strftime("%b %d, %Y %I:%M %p") if task.due_at else "No deadline" }}</span>
+            </div>
+          </article>
+          {% else %}
+          <p class="muted">No tasks yet. Add one from the button above to start building the punch list.</p>
+          {% endfor %}
         </div>
       </section>
 
@@ -94,29 +95,56 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Upcoming Events</p>
-            <h3>Calendar intake</h3>
+            <h3>{{ month_label }}</h3>
           </div>
-          {% if calendar_url_configured %}
-          <form method="post" action="/dashboard/calendar-sync">
-            <button type="submit">Sync Calendar</button>
-          </form>
-          {% else %}
-          <span class="muted">Add `CALENDAR_ICS_URL` to enable sync.</span>
-          {% endif %}
-        </div>
-        <div class="event-list">
-          {% for event in events %}
-          <article class="event-card">
-            <p class="event-time">{{ event.start_at.strftime("%a, %b %d at %I:%M %p") }}</p>
-            <h4>{{ event.title }}</h4>
-            <p class="muted">{{ event.location or "Location not provided" }}</p>
-            {% if event.description %}
-            <p>{{ event.description }}</p>
+          <div class="section-actions">
+            {% if calendar_url_configured %}
+            <form method="post" action="/dashboard/calendar-sync">
+              <button type="submit">Sync Calendar</button>
+            </form>
+            {% else %}
+            <span class="muted">Add `CALENDAR_ICS_URL` to enable sync.</span>
             {% endif %}
-          </article>
-          {% else %}
-          <p class="muted">No events are loaded yet. Once you provide the public calendar link, this area will populate automatically.</p>
-          {% endfor %}
+          </div>
+        </div>
+        <div class="calendar-shell">
+          <div class="calendar-weekdays">
+            <span>Sun</span>
+            <span>Mon</span>
+            <span>Tue</span>
+            <span>Wed</span>
+            <span>Thu</span>
+            <span>Fri</span>
+            <span>Sat</span>
+          </div>
+          <div class="calendar-grid">
+            {% for week in calendar_days %}
+              {% for day in week %}
+              <button
+                type="button"
+                class="calendar-day{% if not day.in_month %} calendar-day--muted{% endif %}"
+                data-day="{{ day.iso }}"
+              >
+                <span class="calendar-day-number">{{ day.day_number }}</span>
+                {% if day.event_count %}
+                <span class="calendar-dot" aria-hidden="true"></span>
+                <span class="calendar-count">{{ day.event_count }} event{% if day.event_count != 1 %}s{% endif %}</span>
+                {% else %}
+                <span class="calendar-count">No events</span>
+                {% endif %}
+              </button>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        </div>
+        <div class="calendar-detail card-panel">
+          <div>
+            <p class="eyebrow">Day Detail</p>
+            <h4 id="calendar-detail-title">Select a day</h4>
+          </div>
+          <div id="calendar-detail-list" class="event-list compact-event-list">
+            <p class="muted">Click a day on the calendar to see the events scheduled there.</p>
+          </div>
         </div>
       </section>
 
@@ -138,13 +166,71 @@
         </div>
       </section>
 
-      {% if can_manage_tasks %}
+      {% if can_manage_users %}
       <section class="card">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Manager Tools</p>
-            <h3>Create task</h3>
+            <p class="eyebrow">Admin Tools</p>
+            <h3>Add team member</h3>
           </div>
+        </div>
+        <form id="user-form" class="task-form">
+          <label>
+            Full Name
+            <input type="text" name="full_name" required minlength="2" />
+          </label>
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Role
+            <select name="role">
+              {% for role in user_roles %}
+              <option value="{{ role }}">{{ role }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            Temporary Password
+            <input type="password" name="password" required minlength="8" />
+          </label>
+          <button type="submit">Add Team Member</button>
+          <p id="user-form-message" class="muted"></p>
+        </form>
+      </section>
+      {% endif %}
+    </main>
+
+    <div id="kanban-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="kanban-modal"></div>
+      <section class="modal-panel modal-panel--wide">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Maintenance Punch List</p>
+            <h3>Kanban board</h3>
+          </div>
+          <div class="section-actions">
+            {% if can_manage_tasks %}
+            <button type="button" data-open-modal="task-modal">Add Task</button>
+            {% endif %}
+            <button type="button" class="ghost-button" data-close-modal="kanban-modal">Close</button>
+          </div>
+        </div>
+        <div id="kanban-board" class="kanban-board"></div>
+      </section>
+    </div>
+
+    {% if can_manage_tasks %}
+    <div id="task-modal" class="modal hidden" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal="task-modal"></div>
+      <section class="modal-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Manager Tools</p>
+            <h3>Add task</h3>
+          </div>
+          <button type="button" class="ghost-button" data-close-modal="task-modal">Close</button>
         </div>
         <form id="task-form" class="task-form">
           <label>
@@ -189,15 +275,159 @@
             <textarea name="description" rows="4"></textarea>
           </label>
           <button type="submit">Create Task</button>
-          <p id="task-form-message" class="muted"></p>
+          <p id="task-form-message" class="muted full-span"></p>
         </form>
       </section>
-      {% endif %}
-    </main>
+    </div>
+    {% endif %}
 
     <script>
       const taskForm = document.getElementById("task-form");
       const message = document.getElementById("task-form-message");
+      const userForm = document.getElementById("user-form");
+      const userMessage = document.getElementById("user-form-message");
+      const modalElements = document.querySelectorAll("[data-open-modal], [data-close-modal]");
+      const tasks = JSON.parse({{ tasks_json|tojson }});
+      const eventsByDay = JSON.parse({{ events_json|tojson }});
+      const canManageTasks = {{ "true" if can_manage_tasks else "false" }};
+      const currentUserId = {{ user.id }};
+      const userRole = {{ user.role.value|tojson }};
+      const kanbanBoard = document.getElementById("kanban-board");
+      const detailTitle = document.getElementById("calendar-detail-title");
+      const detailList = document.getElementById("calendar-detail-list");
+
+      function toggleModal(id, show) {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.toggle("hidden", !show);
+        modal.setAttribute("aria-hidden", show ? "false" : "true");
+      }
+
+      modalElements.forEach((element) => {
+        element.addEventListener("click", () => {
+          if (element.dataset.openModal) {
+            toggleModal(element.dataset.openModal, true);
+          }
+          if (element.dataset.closeModal) {
+            toggleModal(element.dataset.closeModal, false);
+          }
+        });
+      });
+
+      function statusLabel(status) {
+        return status.replaceAll("_", " ");
+      }
+
+      function canEditTask(task) {
+        return canManageTasks || (userRole === "staff" && task.assignee_id === currentUserId);
+      }
+
+      async function updateTaskStatus(taskId, status, button) {
+        button.disabled = true;
+        const response = await fetch(`/api/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+
+        if (response.ok) {
+          window.location.reload();
+          return;
+        }
+
+        button.disabled = false;
+      }
+
+      function renderKanban() {
+        if (!kanbanBoard) return;
+
+        const columns = [
+          { key: "pending", title: "Pending" },
+          { key: "in_progress", title: "In Progress" },
+          { key: "completed", title: "Completed" },
+        ];
+
+        kanbanBoard.innerHTML = columns
+          .map((column) => {
+            const cards = tasks
+              .filter((task) => task.status === column.key)
+              .map((task) => {
+                const actions = columns
+                  .filter((target) => target.key !== task.status)
+                  .map((target) => {
+                    if (!canEditTask(task)) return "";
+                    return `<button type="button" class="mini-button" data-task-id="${task.id}" data-task-status="${target.key}">${target.title}</button>`;
+                  })
+                  .join("");
+
+                return `
+                  <article class="kanban-card">
+                    <div class="task-summary-head">
+                      <strong>${task.title}</strong>
+                      <span class="badge priority-${task.priority}">${task.priority}</span>
+                    </div>
+                    <p class="table-subcopy">${task.description || "No description provided."}</p>
+                    <div class="task-meta">
+                      <span>${task.area}</span>
+                      <span>${task.assignee_name}</span>
+                      <span>${task.due_at}</span>
+                    </div>
+                    <div class="kanban-actions">${actions || '<span class="muted">View only</span>'}</div>
+                  </article>
+                `;
+              })
+              .join("");
+
+            return `
+              <section class="kanban-column">
+                <div class="kanban-column-head">
+                  <h4>${column.title}</h4>
+                  <span>${tasks.filter((task) => task.status === column.key).length}</span>
+                </div>
+                <div class="kanban-column-body">${cards || '<p class="muted">No tasks here.</p>'}</div>
+              </section>
+            `;
+          })
+          .join("");
+
+        kanbanBoard.querySelectorAll("[data-task-id]").forEach((button) => {
+          button.addEventListener("click", () => updateTaskStatus(button.dataset.taskId, button.dataset.taskStatus, button));
+        });
+      }
+
+      function renderDayDetails(dayKey) {
+        const events = eventsByDay[dayKey] || [];
+        const date = new Date(`${dayKey}T12:00:00`);
+        detailTitle.textContent = date.toLocaleDateString(undefined, {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        });
+
+        if (!events.length) {
+          detailList.innerHTML = '<p class="muted">No events scheduled for this day.</p>';
+          return;
+        }
+
+        detailList.innerHTML = events
+          .map((event) => `
+            <article class="event-card">
+              <p class="event-time">${event.start_at}</p>
+              <h4>${event.title}</h4>
+              <p class="muted">${event.location || "Location not provided"}</p>
+              ${event.description ? `<p>${event.description}</p>` : ""}
+            </article>
+          `)
+          .join("");
+      }
+
+      document.querySelectorAll(".calendar-day").forEach((dayButton) => {
+        dayButton.addEventListener("click", () => {
+          document.querySelectorAll(".calendar-day").forEach((button) => button.classList.remove("calendar-day--active"));
+          dayButton.classList.add("calendar-day--active");
+          renderDayDetails(dayButton.dataset.day);
+        });
+      });
 
       if (taskForm) {
         taskForm.addEventListener("submit", async (event) => {
@@ -232,6 +462,38 @@
           const result = await response.json().catch(() => ({}));
           message.textContent = result.detail || "Unable to create task.";
         });
+      }
+
+      if (userForm) {
+        userForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formData = new FormData(userForm);
+          const payload = Object.fromEntries(formData.entries());
+
+          const response = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            userMessage.textContent = "Team member added. Refreshing dashboard...";
+            window.location.reload();
+            return;
+          }
+
+          const result = await response.json().catch(() => ({}));
+          userMessage.textContent = result.detail || "Unable to add team member.";
+        });
+      }
+
+      renderKanban();
+      const firstActiveDay =
+        document.querySelector(".calendar-day[data-day='{{ now.date().isoformat() }}']") ||
+        document.querySelector(".calendar-day[data-day]");
+      if (firstActiveDay) {
+        firstActiveDay.classList.add("calendar-day--active");
+        renderDayDetails(firstActiveDay.dataset.day);
       }
     </script>
   </body>

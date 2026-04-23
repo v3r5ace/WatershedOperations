@@ -8,6 +8,7 @@
   --primary: #5a7442;
   --primary-dark: #425830;
   --accent: #b9813f;
+  --calendar-blue: #0e61b9;
   --danger: #a94e3d;
   --shadow: 0 18px 60px rgba(58, 50, 35, 0.12);
   --radius: 22px;
@@ -92,7 +93,19 @@ button:hover,
 
 .brand-logo,
 .hero-logo {
-  width: 140px;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.brand-logo {
+  width: 240px;
+  max-width: 42vw;
+}
+
+.hero-logo {
+  width: 220px;
+  max-width: min(32vw, 220px);
   height: auto;
 }
 
@@ -157,6 +170,14 @@ select {
   gap: 1rem;
 }
 
+.hero-actions,
+.section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .user-pill {
   display: grid;
   gap: 0.15rem;
@@ -172,6 +193,7 @@ select {
 .hero {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 2rem;
   padding: 1.75rem;
 }
@@ -277,12 +299,24 @@ td {
   gap: 1rem;
 }
 
+.card-panel {
+  margin-top: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 1rem;
+}
+
 .event-card,
 .team-card {
   padding: 1rem;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.9);
+}
+
+.team-card strong {
+  display: block;
 }
 
 .event-time {
@@ -304,6 +338,192 @@ td {
   grid-column: 1 / -1;
 }
 
+.task-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.task-summary-card {
+  padding: 1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+}
+
+.task-summary-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.task-meta span {
+  display: inline-flex;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(31, 36, 31, 0.06);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.calendar-shell {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.calendar-weekdays span {
+  padding: 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.calendar-day {
+  min-height: 108px;
+  padding: 0.9rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.calendar-day:hover,
+.calendar-day--active {
+  background: rgba(14, 97, 185, 0.12);
+  border-color: rgba(14, 97, 185, 0.28);
+}
+
+.calendar-day--muted {
+  opacity: 0.55;
+}
+
+.calendar-day-number {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.calendar-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--calendar-blue);
+  box-shadow: 0 0 0 6px rgba(14, 97, 185, 0.12);
+}
+
+.calendar-count {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.compact-event-list {
+  margin-top: 1rem;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(25, 28, 22, 0.42);
+  backdrop-filter: blur(8px);
+}
+
+.modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(860px, 100%);
+  max-height: calc(100vh - 3rem);
+  overflow: auto;
+  padding: 1.5rem;
+  border-radius: 26px;
+  background: rgba(250, 247, 241, 0.97);
+  box-shadow: var(--shadow);
+}
+
+.modal-panel--wide {
+  width: min(1260px, 100%);
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.kanban-column {
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.64);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  padding: 1rem;
+}
+
+.kanban-column-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.kanban-column-head h4 {
+  margin: 0;
+}
+
+.kanban-column-body {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.kanban-card {
+  padding: 1rem;
+  border-radius: 18px;
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+}
+
+.kanban-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.mini-button {
+  padding: 0.55rem 0.8rem;
+  font-size: 0.84rem;
+}
+
 @media (max-width: 900px) {
   .login-card,
   .hero,
@@ -315,8 +535,30 @@ td {
   }
 
   .stats-row,
-  .task-form {
+  .task-form,
+  .task-summary-grid,
+  .kanban-board {
     grid-template-columns: 1fr;
+  }
+
+  .brand-logo,
+  .hero-logo {
+    max-width: 100%;
+  }
+
+  .calendar-day {
+    min-height: 84px;
+    padding: 0.7rem 0.45rem;
+  }
+
+  .calendar-weekdays,
+  .calendar-grid {
+    gap: 0.35rem;
+  }
+
+  .calendar-weekdays span,
+  .calendar-count {
+    font-size: 0.7rem;
   }
 
   .dashboard-grid,
