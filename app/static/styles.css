@@ -1,18 +1,20 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;700;800&display=swap");
+
 :root {
-  --bg: #f4efe7;
-  --surface: rgba(255, 252, 247, 0.88);
-  --surface-strong: #fffdf8;
-  --ink: #1f241f;
-  --muted: #5c6257;
-  --line: rgba(46, 57, 46, 0.12);
-  --primary: #5a7442;
-  --primary-dark: #425830;
-  --accent: #b9813f;
+  --bg: #f6f4ef;
+  --surface: rgba(255, 255, 255, 0.94);
+  --surface-strong: #ffffff;
+  --ink: #111111;
+  --muted: #5f5f5f;
+  --line: rgba(17, 17, 17, 0.1);
+  --primary: #111111;
+  --primary-dark: #000000;
+  --accent: #111111;
   --calendar-blue: #0e61b9;
   --danger: #a94e3d;
-  --shadow: 0 18px 60px rgba(58, 50, 35, 0.12);
-  --radius: 22px;
-  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  --shadow: 0 18px 40px rgba(17, 17, 17, 0.08);
+  --radius: 24px;
+  font-family: "DM Sans", "Segoe UI", sans-serif;
 }
 
 * {
@@ -23,8 +25,8 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(circle at top left, rgba(185, 129, 63, 0.16), transparent 24%),
-    linear-gradient(180deg, #f8f3eb 0%, #ede6da 100%);
+    radial-gradient(circle at top right, rgba(14, 97, 185, 0.08), transparent 22%),
+    linear-gradient(180deg, #fbfaf7 0%, #f2efe8 100%);
   min-height: 100vh;
 }
 
@@ -67,8 +69,9 @@ button:hover,
 }
 
 .ghost-button {
-  background: rgba(90, 116, 66, 0.12);
-  color: var(--primary-dark);
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid rgba(17, 17, 17, 0.16);
 }
 
 .login-shell {
@@ -79,9 +82,8 @@ button:hover,
 
 .login-card,
 .card {
-  backdrop-filter: blur(12px);
   background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(17, 17, 17, 0.08);
   box-shadow: var(--shadow);
   border-radius: var(--radius);
 }
@@ -126,9 +128,10 @@ button:hover,
 .eyebrow {
   margin: 0 0 0.35rem;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   font-size: 0.72rem;
-  color: var(--accent);
+  color: var(--calendar-blue);
+  font-weight: 700;
 }
 
 .muted {
@@ -174,8 +177,12 @@ select {
 .topbar h1,
 .hero h2,
 .section-heading h3,
-.login-card h1 {
+.login-card h1,
+.card h4,
+.kanban-column-head h4 {
   margin: 0;
+  font-family: "Bricolage Grotesque", "DM Sans", sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .topbar-actions {
@@ -201,7 +208,7 @@ select {
 .dashboard-grid {
   padding: 0 2rem 2rem;
   display: grid;
-  gap: 1.25rem;
+  gap: 1.6rem;
 }
 
 .hero {
@@ -209,17 +216,17 @@ select {
   justify-content: space-between;
   align-items: center;
   gap: 2rem;
-  padding: 1.75rem;
+  padding: 2rem;
 }
 
 .stats-row {
   display: grid;
-  gap: 1rem;
+  gap: 1.15rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .stat-card {
-  padding: 1.25rem;
+  padding: 1.5rem;
 }
 
 .stat-card span {
@@ -233,7 +240,7 @@ select {
 }
 
 .card {
-  padding: 1.5rem;
+  padding: 1.75rem;
 }
 
 .section-heading {
@@ -241,7 +248,7 @@ select {
   justify-content: space-between;
   gap: 1rem;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .table-shell {
@@ -271,8 +278,8 @@ td {
   align-items: center;
   border-radius: 999px;
   padding: 0.35rem 0.65rem;
-  background: rgba(90, 116, 66, 0.12);
-  color: var(--primary-dark);
+  background: rgba(17, 17, 17, 0.06);
+  color: var(--ink);
   font-size: 0.84rem;
   text-transform: capitalize;
 }
@@ -316,35 +323,35 @@ td {
 .calendar-roster-grid {
   display: grid;
   grid-template-columns: minmax(300px, 1fr) minmax(420px, 1fr);
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .admin-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
+  gap: 1.5rem;
   align-items: start;
 }
 
 .admin-stack {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .card-panel {
   margin-top: 1rem;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.72);
-  padding: 1rem;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(255, 255, 255, 0.98);
+  padding: 1.2rem;
 }
 
 .event-card,
 .team-card {
-  padding: 1rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  padding: 1.2rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(17, 17, 17, 0.07);
 }
 
 .team-card strong {
@@ -369,13 +376,13 @@ td {
 .admin-form {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 1.15rem;
 }
 
 .admin-entity-grid,
 .venue-grid {
   display: grid;
-  gap: 1rem;
+  gap: 1.15rem;
 }
 
 .full-span {
@@ -385,7 +392,7 @@ td {
 .task-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 1.15rem;
 }
 
 .venue-grid {
@@ -393,17 +400,17 @@ td {
 }
 
 .venue-card {
-  padding: 1rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.92);
+  padding: 1.2rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(17, 17, 17, 0.07);
 }
 
 .task-summary-card {
-  padding: 1rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.68);
-  border: 1px solid rgba(255, 255, 255, 0.92);
+  padding: 1.1rem;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(17, 17, 17, 0.07);
 }
 
 .task-summary-head {
@@ -424,20 +431,20 @@ td {
   display: inline-flex;
   padding: 0.35rem 0.65rem;
   border-radius: 999px;
-  background: rgba(31, 36, 31, 0.06);
+  background: rgba(17, 17, 17, 0.05);
   color: var(--muted);
   font-size: 0.82rem;
 }
 
 .room-layout-form {
   display: grid;
-  gap: 0.8rem;
-  margin-top: 1rem;
+  gap: 1rem;
+  margin-top: 1.1rem;
 }
 
 .calendar-shell {
   display: grid;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .calendar-card .calendar-shell {
@@ -448,7 +455,7 @@ td {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 .calendar-weekdays span {
@@ -462,9 +469,9 @@ td {
 .calendar-day {
   min-height: 78px;
   padding: 0.65rem;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.94);
-  background: rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(255, 255, 255, 0.98);
   color: var(--ink);
   display: flex;
   flex-direction: column;
@@ -539,7 +546,7 @@ td {
   overflow: auto;
   padding: 1.5rem;
   border-radius: 26px;
-  background: rgba(250, 247, 241, 0.97);
+  background: rgba(255, 255, 255, 0.99);
   box-shadow: var(--shadow);
 }
 
@@ -550,14 +557,14 @@ td {
 .kanban-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
+  gap: 1.15rem;
 }
 
 .kanban-column {
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.64);
-  border: 1px solid rgba(255, 255, 255, 0.92);
-  padding: 1rem;
+  border-radius: 24px;
+  background: rgba(249, 248, 244, 0.96);
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  padding: 1.15rem;
 }
 
 .kanban-column--active {
@@ -578,12 +585,12 @@ td {
 
 .kanban-column-body {
   display: grid;
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 .kanban-card {
   padding: 1rem;
-  border-radius: 18px;
+  border-radius: 20px;
   background: var(--surface-strong);
   border: 1px solid var(--line);
 }
